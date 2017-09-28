@@ -17,7 +17,7 @@ from ctapipe.utils.linalg import rotation_matrix_2d
 from ctapipe.core import Provenance
 
 
-__all__ = ['CameraGeometry',]
+__all__ = ['CameraGeometry']
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +26,8 @@ logger = logging.getLogger(__name__)
 # telescope into a camera type for use in `CameraGeometry.guess()`
 #     Key = (num_pix, focal_length_in_meters)
 #     Value = (type, subtype, pixtype, pixrotation, camrotation)
+global _CAMERA_GEOMETRY_TABLE
+
 _CAMERA_GEOMETRY_TABLE = {
     (2048, 2.3): ('SST', 'CHEC', 'rectangular', 0 * u.degree, 0 * u.degree),
     (2048, 2.2): ('SST', 'CHEC', 'rectangular', 0 * u.degree, 0 * u.degree),
@@ -142,8 +144,8 @@ class CameraGeometry:
         # now try to determine the camera type using the map defined at the
         # top of this file.
 
-        tel_type, cam_id, pix_type, pix_rotation, cam_rotation = \
-            _guess_camera_type(len(pix_x), optical_foclen)
+        cam_id, pix_type, pix_rotation, cam_rotation = \
+            _guess_camera_type(len(pix_x), optical_foclen)[1:]
 
         area = cls._calc_pixel_area(pix_x, pix_y, pix_type)
 
@@ -466,7 +468,6 @@ def _find_neighbor_pixels(pix_x, pix_y, rad):
 
 
 def _guess_camera_type(npix, optical_foclen):
-    global _CAMERA_GEOMETRY_TABLE
 
     try:
         return _CAMERA_GEOMETRY_TABLE[(npix, None)]
@@ -486,7 +487,7 @@ def _neighbor_list_to_matrix(neighbors):
     neigh2d = np.zeros(shape=(npix, npix), dtype=np.bool)
 
     for ipix, neighbors in enumerate(neighbors):
-        for jn, neighbor in enumerate(neighbors):
+        for neighbor in enumerate(neighbors):
             neigh2d[ipix, neighbor] = True
 
     return neigh2d
